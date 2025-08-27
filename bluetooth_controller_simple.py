@@ -316,12 +316,13 @@ class SimpleBluetoothController:
         
         capabilities = self.device.capabilities()
         for event_type, codes in capabilities.items():
-            event_type_name = evdev.events.get(event_type, f"UNKNOWN_{event_type}")
+            # Get event type name from evdev constants
+            event_type_name = f"EV_{evdev.ecodes.EV[event_type]}" if event_type in evdev.ecodes.EV else f"UNKNOWN_{event_type}"
             print(f"  {event_type_name} ({event_type}): {codes}")
             
         print(f"\nSupported event types:")
         for event_type in capabilities.keys():
-            event_type_name = evdev.events.get(event_type, f"UNKNOWN_{event_type}")
+            event_type_name = f"EV_{evdev.ecodes.EV[event_type]}" if event_type in evdev.ecodes.EV else f"UNKNOWN_{event_type}"
             print(f"  {event_type_name} ({event_type})")
 
 
