@@ -1,0 +1,31 @@
+{
+  "key_mappings": {
+    "KEY_UP": "home_point",
+    "KEY_DOWN": "away_point",
+    "KEY_LEFT": "swap_server",
+    "KEY_RIGHT": "reset_match",
+    "KEY_S": "swap_server",
+    "KEY_R": "reset_match",
+    "KEY_N": "new_match",
+    "KEY_L": "load_latest",
+    "KEY_H": "home_point",
+    "KEY_A": "away_point"
+  },
+  "device_mappings": {
+    "Bluetooth Remote": {
+      "KEY_UP": "home_point",
+      "KEY_DOWN": "away_point",
+      "KEY_LEFT": "swap_server",
+      "KEY_RIGHT": "reset_match"
+    },
+    "USB Keyboard": {
+      "KEY_UP": "home_point",
+      "KEY_DOWN": "away_point",
+      "KEY_S": "swap_server",
+      "KEY_R": "reset_match",
+      "KEY_N": "new_match",
+      "KEY_L": "load_latest"
+    }
+  },
+  "description": "Input configuration for tennis scoreboard system. Phase 2 feature for customizable key mappings."
+}

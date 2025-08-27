@@ -1,0 +1,30 @@
+[Unit]
+Description=Tennis Scoreboard Service
+After=network.target bluetooth.service
+Wants=bluetooth.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/tennis-scoreboard
+ExecStart=/usr/bin/python3 /home/pi/tennis-scoreboard/tennis_scoreboard.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables
+Environment=PYTHONPATH=/home/pi/tennis-scoreboard
+Environment=DISPLAY=:0
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/pi/matches /dev/input
+
+# Input device access
+SupplementaryGroups=input
+
+[Install]
+WantedBy=multi-user.target

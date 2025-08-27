@@ -1,0 +1,4 @@
+# Core dependencies
+# Add evdev for Bluetooth controller support (Linux/Raspberry Pi)
+evdev>=1.6.1
+pathlib2>=2.3.7
