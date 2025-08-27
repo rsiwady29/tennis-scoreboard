@@ -27,6 +27,10 @@ class SimpleBluetoothController:
             105: 'LEFT_ARROW',
             106: 'RIGHT_ARROW',
             
+            # Your specific device codes (discovered)
+            330: 'BUTTON_330',
+            320: 'BUTTON_320',
+            
             # Media controls
             164: 'PLAY_PAUSE',
             165: 'NEXT_TRACK',
@@ -214,6 +218,10 @@ class SimpleBluetoothController:
     
     def _get_event_name(self, event_code):
         """Get readable name for event code."""
+        if event_code not in self.EVENT_CODES:
+            # Log unknown event codes for discovery
+            print(f"🔍 NEW EVENT CODE DISCOVERED: {event_code}")
+            print(f"   Add this to EVENT_CODES: {event_code}: 'BUTTON_{event_code}',")
         return self.EVENT_CODES.get(event_code, f"UNKNOWN_{event_code}")
     
     def _listen_loop(self):
@@ -229,19 +237,30 @@ class SimpleBluetoothController:
         
         try:
             for event in self.device.read_loop():
-                if event.type == evdev.ecodes.EV_KEY:
-                    event_code = event.code
-                    event_value = event.value
+                # Capture ALL event types to see what your device actually sends
+                event_type = event.type
+                event_code = event.code
+                event_value = event.value
+                
+                # Get human-readable names for event types
+                if event_type == evdev.ecodes.EV_KEY:
+                    event_type_name = "KEY"
                     event_name = self._get_event_name(event_code)
+                    action = "PRESS" if event_value == 1 else "RELEASE" if event_value == 0 else "REPEAT"
+                    print(f"{action}: {event_name} (type: {event_type_name}, code: {event_code}, value: {event_value})")
+                elif event_type == evdev.ecodes.EV_ABS:
+                    event_type_name = "ABS"
+                    print(f"ABS: axis {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
+                elif event_type == evdev.ecodes.EV_REL:
+                    event_type_name = "REL"
+                    print(f"REL: axis {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
+                elif event_type == evdev.ecodes.EV_MSC:
+                    event_type_name = "MSC"
+                    print(f"MSC: {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
+                else:
+                    # Unknown event type - this might be how your device differentiates buttons!
+                    print(f"UNKNOWN EVENT: type={event_type}, code={event_code}, value={event_value}")
                     
-                    # Event values: 0=release, 1=press, 2=repeat
-                    if event_value == 1:
-                        print(f"PRESS: {event_name} (code: {event_code})")
-                    elif event_value == 0:
-                        print(f"RELEASE: {event_name} (code: {event_code})")
-                    elif event_value == 2:
-                        print(f"REPEAT: {event_name} (code: {event_code})")
-                        
         except KeyboardInterrupt:
             print("\nStopping Bluetooth controller...")
         except Exception as e:
@@ -283,6 +302,27 @@ class SimpleBluetoothController:
                 print(f"  {path}: {device.name}")
             except Exception as e:
                 print(f"  {path}: Error reading device info: {e}")
+    
+    def show_device_capabilities(self):
+        """Show detailed capabilities of the current device."""
+        if not self.device:
+            print("No device available to show capabilities")
+            return
+            
+        print(f"\nDevice: {self.device.name}")
+        print(f"Path: {self.device.path}")
+        print(f"Info: {self.device.info}")
+        print("\nCapabilities:")
+        
+        capabilities = self.device.capabilities()
+        for event_type, codes in capabilities.items():
+            event_type_name = evdev.events.get(event_type, f"UNKNOWN_{event_type}")
+            print(f"  {event_type_name} ({event_type}): {codes}")
+            
+        print(f"\nSupported event types:")
+        for event_type in capabilities.keys():
+            event_type_name = evdev.events.get(event_type, f"UNKNOWN_{event_type}")
+            print(f"  {event_type_name} ({event_type})")
 
 
 def main():
@@ -294,6 +334,10 @@ def main():
     # List available devices
     controller = SimpleBluetoothController()
     controller.list_devices()
+    print()
+    
+    # Show capabilities of the selected device
+    controller.show_device_capabilities()
     print()
     
     # Start listening
