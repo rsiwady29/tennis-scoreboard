@@ -19,6 +19,12 @@ class SimpleBluetoothController:
         self.thread = None
         self.device = None
         
+        # Track button state and patterns
+        self.button_pressed = False
+        self.last_abs_values = {0: 0, 1: 0}
+        self.button_pattern = []
+        self.last_button_time = 0
+        
         # Comprehensive event code mapping for Bluetooth devices
         self.EVENT_CODES = {
             # Arrow keys
@@ -224,6 +230,25 @@ class SimpleBluetoothController:
             print(f"   Add this to EVENT_CODES: {event_code}: 'BUTTON_{event_code}',")
         return self.EVENT_CODES.get(event_code, f"UNKNOWN_{event_code}")
     
+    def _detect_button_from_pattern(self, abs_values):
+        """Detect which button was pressed based on ABS axis patterns."""
+        axis_0 = abs_values.get(0, 0)
+        axis_1 = abs_values.get(1, 0)
+        
+        # Detect button based on directional patterns
+        if axis_0 < 200 and axis_1 > 500:
+            return "UP BUTTON"
+        elif axis_0 < 200 and axis_1 < 200:
+            return "DOWN BUTTON"
+        elif axis_0 < 200 and 350 <= axis_1 <= 450:
+            return "LEFT BUTTON"
+        elif axis_0 > 350 and 350 <= axis_1 <= 450:
+            return "RIGHT BUTTON"
+        elif 250 <= axis_0 <= 350 and axis_1 == 500:
+            return "MIDDLE BUTTON"
+        else:
+            return f"UNKNOWN_BUTTON (Axis0: {axis_0}, Axis1: {axis_1})"
+    
     def _listen_loop(self):
         """Main listening loop for button events."""
         if not self.device:
@@ -242,15 +267,27 @@ class SimpleBluetoothController:
                 event_code = event.code
                 event_value = event.value
                 
+                # Track ABS values for button detection
+                if event_type == evdev.ecodes.EV_ABS:
+                    self.last_abs_values[event_code] = event_value
+                    event_type_name = "ABS"
+                    print(f"ABS: axis {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
+                
                 # Get human-readable names for event types
-                if event_type == evdev.ecodes.EV_KEY:
+                elif event_type == evdev.ecodes.EV_KEY:
                     event_type_name = "KEY"
                     event_name = self._get_event_name(event_code)
                     action = "PRESS" if event_value == 1 else "RELEASE" if event_value == 0 else "REPEAT"
-                    print(f"{action}: {event_name} (type: {event_type_name}, code: {event_code}, value: {event_value})")
-                elif event_type == evdev.ecodes.EV_ABS:
-                    event_type_name = "ABS"
-                    print(f"ABS: axis {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
+                    
+                    # Smart button detection when key is pressed
+                    if event_value == 1:  # Button press
+                        button_name = self._detect_button_from_pattern(self.last_abs_values)
+                        print(f"🎯 {action}: {button_name}")
+                        print(f"   Raw: {event_name} (type: {event_type_name}, code: {event_code}, value: {event_value})")
+                        print(f"   ABS values: {self.last_abs_values}")
+                    else:
+                        print(f"{action}: {event_name} (type: {event_type_name}, code: {event_code}, value: {event_value})")
+                        
                 elif event_type == evdev.ecodes.EV_REL:
                     event_type_name = "REL"
                     print(f"REL: axis {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
