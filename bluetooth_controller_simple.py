@@ -262,41 +262,14 @@ class SimpleBluetoothController:
         
         try:
             for event in self.device.read_loop():
-                # Capture ALL event types to see what your device actually sends
-                event_type = event.type
-                event_code = event.code
-                event_value = event.value
+                # Track ABS values for button detection (silently)
+                if event.type == evdev.ecodes.EV_ABS:
+                    self.last_abs_values[event.code] = event.value
                 
-                # Track ABS values for button detection
-                if event_type == evdev.ecodes.EV_ABS:
-                    self.last_abs_values[event_code] = event_value
-                    event_type_name = "ABS"
-                    print(f"ABS: axis {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
-                
-                # Get human-readable names for event types
-                elif event_type == evdev.ecodes.EV_KEY:
-                    event_type_name = "KEY"
-                    event_name = self._get_event_name(event_code)
-                    action = "PRESS" if event_value == 1 else "RELEASE" if event_value == 0 else "REPEAT"
-                    
-                    # Smart button detection when key is pressed
-                    if event_value == 1:  # Button press
-                        button_name = self._detect_button_from_pattern(self.last_abs_values)
-                        print(f"🎯 {action}: {button_name}")
-                        print(f"   Raw: {event_name} (type: {event_type_name}, code: {event_code}, value: {event_value})")
-                        print(f"   ABS values: {self.last_abs_values}")
-                    else:
-                        print(f"{action}: {event_name} (type: {event_type_name}, code: {event_code}, value: {event_value})")
-                        
-                elif event_type == evdev.ecodes.EV_REL:
-                    event_type_name = "REL"
-                    print(f"REL: axis {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
-                elif event_type == evdev.ecodes.EV_MSC:
-                    event_type_name = "MSC"
-                    print(f"MSC: {event_code} = {event_value} (type: {event_type_name}, code: {event_code}, value: {event_value})")
-                else:
-                    # Unknown event type - this might be how your device differentiates buttons!
-                    print(f"UNKNOWN EVENT: type={event_type}, code={event_code}, value={event_value}")
+                # Only show button press events
+                elif event.type == evdev.ecodes.EV_KEY and event.value == 1:
+                    button_name = self._detect_button_from_pattern(self.last_abs_values)
+                    print(f"🎯 {button_name}")
                     
         except KeyboardInterrupt:
             print("\nStopping Bluetooth controller...")
@@ -375,7 +348,7 @@ def main():
     print()
     
     # Show capabilities of the selected device
-    controller.show_device_capabilities()
+    # controller.show_device_capabilities()
     print()
     
     # Start listening
